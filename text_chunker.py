@@ -1,10 +1,5 @@
-# ============================================================
-# text_chunker.py
-# STEP 2: Split large text into smaller, overlapping chunks
-# ============================================================
-
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.schema import Document
+from langchain_core.documents import Document
 from typing import List
 
 def split_into_chunks(pages: List[Document], chunk_size: int = 500, chunk_overlap: int = 50):
@@ -17,7 +12,6 @@ def split_into_chunks(pages: List[Document], chunk_size: int = 500, chunk_overla
     )
 
     chunks = splitter.split_documents(pages)
-
     print(f"✅ Created {len(chunks)} text chunk(s) from {len(pages)} page(s).")
 
     if chunks:
