@@ -1,8 +1,8 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
-from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from langchain_community.vectorstores import FAISS
-from langchain_community.chains import RetrievalQA
 import os
 
 def build_qa_chain(vector_store: FAISS):
@@ -13,21 +13,14 @@ def build_qa_chain(vector_store: FAISS):
         search_kwargs={"k": 3}
     )
 
-    prompt_template = """You are a helpful assistant that answers questions based ONLY 
-on the provided document context. If the answer is not found in the context, 
-say "I couldn't find that information in the document."
+    prompt = PromptTemplate.from_template("""You are a helpful assistant that answers questions based ONLY on the provided document context. If the answer is not found in the context, say "I couldn't find that information in the document."
 
 Context from the document:
 {context}
 
 User Question: {question}
 
-Answer:"""
-
-    PROMPT = PromptTemplate(
-        template=prompt_template,
-        input_variables=["context", "question"]
-    )
+Answer:""")
 
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
@@ -35,12 +28,14 @@ Answer:"""
         temperature=0
     )
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": PROMPT}
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    qa_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
     )
 
     print("✅ QA pipeline ready!")
@@ -51,17 +46,7 @@ def ask_question(qa_chain, question: str):
     print(f"\n❓ Question: {question}")
     print("⏳ Searching document and generating answer...")
 
-    result = qa_chain.invoke({"query": question})
-
-    answer = result["result"]
-    source_docs = result["source_documents"]
+    answer = qa_chain.invoke(question)
 
     print(f"\n💬 Answer:\n{answer}")
-
-    print(f"\n📚 Based on {len(source_docs)} document chunk(s):")
-    for i, doc in enumerate(source_docs, 1):
-        page_num = doc.metadata.get("page", "unknown")
-        preview = doc.page_content[:100].replace("\n", " ")
-        print(f"   Chunk {i} (page {page_num}): {preview}...")
-
     return answer
