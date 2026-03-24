@@ -7,382 +7,471 @@ from qa_pipeline import build_qa_chain, ask_question
 
 st.set_page_config(
     page_title="AskMyDoc",
-    page_icon="✦",
+    page_icon="⚔",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Display:wght@400;500&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Syne:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600&family=Share+Tech+Mono&display=swap');
 
 :root {
-    --bg-dark:    #0F0F10;
-    --bg-card:    #1A1A1F;
-    --bg-hover:   #22222A;
-    --border:     rgba(255,255,255,0.08);
-    --border-glow:rgba(138,180,248,0.3);
-    --text-white: #E8EAED;
-    --text-muted: #9AA0A6;
-    --text-dim:   #5F6368;
-    --blue:       #8AB4F8;
-    --purple:     #C58AF9;
-    --teal:       #78D9D1;
-    --pink:       #F28B82;
-    --gold:       #FDD663;
+    --bg:         #050508;
+    --bg-card:    #0A0A10;
+    --bg-panel:   #0D0D16;
+    --neon-cyan:  #00F5FF;
+    --neon-purple:#BF5FFF;
+    --neon-pink:  #FF2D78;
+    --neon-gold:  #FFD700;
+    --neon-green: #00FF88;
+    --text-main:  #E0E8FF;
+    --text-muted: #6A7A9A;
+    --text-dim:   #3A4A6A;
+    --border:     rgba(0,245,255,0.08);
+    --border-hot: rgba(0,245,255,0.3);
 }
 
 html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif !important;
-    background-color: var(--bg-dark) !important;
-    color: var(--text-white) !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    background: var(--bg) !important;
+    color: var(--text-main) !important;
 }
-
-.stApp { background: var(--bg-dark) !important; }
+.stApp { background: var(--bg) !important; }
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none; }
 
-/* Animated gradient background */
+/* ── Animated scanlines overlay ── */
+.stApp::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,245,255,0.01) 2px,
+        rgba(0,245,255,0.01) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* ── Ambient background glow ── */
 .stApp::before {
     content: '';
     position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: 
-        radial-gradient(ellipse at 20% 20%, rgba(138,180,248,0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(197,138,249,0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(120,217,209,0.02) 0%, transparent 60%);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+        radial-gradient(ellipse at 10% 10%, rgba(0,245,255,0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 90% 90%, rgba(191,95,255,0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%, rgba(255,45,120,0.04) 0%, transparent 30%),
+        radial-gradient(ellipse at 0% 100%, rgba(0,255,136,0.03) 0%, transparent 30%);
     pointer-events: none;
     z-index: 0;
 }
 
-/* Sidebar */
+/* ── SIDEBAR ── */
 section[data-testid="stSidebar"] {
-    background: #0D0D0F !important;
-    border-right: 1px solid var(--border) !important;
+    background: var(--bg-panel) !important;
+    border-right: 1px solid var(--border-hot) !important;
+    box-shadow: 4px 0 30px rgba(0,245,255,0.05) !important;
 }
-section[data-testid="stSidebar"] * { color: var(--text-white) !important; }
-section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-size: 0.85rem !important; }
+section[data-testid="stSidebar"] * { color: var(--text-main) !important; }
+section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-size: 0.84rem !important; }
 
 .logo-wrap {
     padding: 2rem 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(0,245,255,0.15);
     margin-bottom: 1rem;
+    position: relative;
+}
+
+.logo-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+    animation: borderScan 3s ease-in-out infinite;
+}
+
+@keyframes borderScan {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
 }
 
 .logo-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 50%, var(--teal) 100%);
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    letter-spacing: -0.5px;
+    background-size: 200% auto;
+    animation: textScan 4s linear infinite;
     margin: 0;
-    animation: shimmer 4s ease-in-out infinite;
-    background-size: 200% 200%;
+    text-shadow: none;
 }
 
-@keyframes shimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+@keyframes textScan {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
 }
 
 .logo-sub {
-    font-size: 0.7rem;
-    letter-spacing: 2px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 3px;
+    color: var(--neon-cyan) !important;
+    opacity: 0.6;
+    margin-top: 0.3rem;
     text-transform: uppercase;
-    color: var(--text-dim) !important;
-    margin-top: 0.2rem;
 }
 
 .sidebar-step {
     display: flex;
     gap: 0.75rem;
     align-items: flex-start;
-    padding: 0.55rem 0;
+    padding: 0.5rem 0;
 }
 
-.step-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
+.step-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--neon-cyan);
+    opacity: 0.7;
+    width: 16px;
     flex-shrink: 0;
-    margin-top: 6px;
+    margin-top: 2px;
 }
 
 .step-txt {
     font-size: 0.82rem;
     color: var(--text-muted) !important;
     line-height: 1.5;
+    font-weight: 400;
 }
 
-/* Main header */
+/* ── HERO SECTION ── */
 .hero {
-    padding: 3.5rem 0 2.5rem;
+    padding: 3rem 0 2rem;
     text-align: center;
     position: relative;
 }
 
-.hero-sparkle {
-    font-size: 0.7rem;
-    letter-spacing: 3px;
+.hero-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
     text-transform: uppercase;
-    background: linear-gradient(90deg, var(--blue), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
     display: block;
+    opacity: 0.8;
+    animation: flicker 5s ease-in-out infinite;
+}
+
+@keyframes flicker {
+    0%, 95%, 100% { opacity: 0.8; }
+    96% { opacity: 0.3; }
+    97% { opacity: 0.8; }
+    98% { opacity: 0.4; }
+    99% { opacity: 0.8; }
 }
 
 .hero-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 3.2rem;
-    font-weight: 700;
-    line-height: 1.1;
-    margin: 0 0 0.8rem;
-    background: linear-gradient(135deg, #FFFFFF 0%, var(--blue) 40%, var(--purple) 70%, var(--teal) 100%);
+    font-family: 'Orbitron', monospace;
+    font-size: 3.5rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--neon-cyan) 30%, var(--neon-purple) 60%, var(--neon-pink) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     background-size: 300% 300%;
-    animation: titleFlow 6s ease infinite;
+    animation: epicFlow 5s ease infinite;
+    margin: 0 0 0.5rem;
+    line-height: 1.1;
+    filter: drop-shadow(0 0 30px rgba(0,245,255,0.3));
 }
 
-@keyframes titleFlow {
+@keyframes epicFlow {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
 }
 
 .hero-sub {
+    font-family: 'Rajdhani', sans-serif;
     font-size: 1rem;
     color: var(--text-muted);
     font-weight: 300;
-    letter-spacing: 0.3px;
-    margin: 0;
+    letter-spacing: 1px;
+    margin: 0.5rem 0 0;
 }
 
-/* Glowing divider */
-.glow-divider {
+/* ── NEON DIVIDER ── */
+.neon-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--blue), var(--purple), var(--teal), transparent);
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), var(--neon-pink), transparent);
     margin: 0.5rem 0 2.5rem;
-    opacity: 0.4;
+    position: relative;
+    animation: dividerPulse 3s ease-in-out infinite;
 }
 
-/* Cards */
-.glass-card {
+@keyframes dividerPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.neon-divider::after {
+    content: '';
+    position: absolute;
+    top: -2px; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+    animation: dotPulse 3s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan); }
+    50% { box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan), 0 0 60px var(--neon-purple); }
+}
+
+/* ── SECTION LABEL ── */
+.sec-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--neon-cyan);
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.8;
+}
+
+/* ── HUD CARD ── */
+.hud-card {
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    border: 1px solid rgba(0,245,255,0.15);
+    border-radius: 4px;
     padding: 1.5rem;
     position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s ease;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
 }
 
-.glass-card::before {
+.hud-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(138,180,248,0.4), rgba(197,138,249,0.4), transparent);
+    background: linear-gradient(90deg, var(--neon-cyan), transparent);
 }
 
-.glass-card:hover {
-    border-color: rgba(138,180,248,0.2);
+.hud-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--neon-cyan), transparent);
 }
 
-/* Section label */
-.sec-label {
-    font-size: 0.68rem;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    background: linear-gradient(90deg, var(--blue), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 1rem;
-    display: block;
-    font-weight: 500;
-}
-
-/* File uploader */
+/* ── FILE UPLOADER ── */
 [data-testid="stFileUploader"] > div {
     background: var(--bg-card) !important;
-    border: 1px dashed rgba(138,180,248,0.25) !important;
-    border-radius: 12px !important;
+    border: 1px solid rgba(0,245,255,0.2) !important;
+    border-radius: 4px !important;
     transition: all 0.3s ease !important;
 }
 [data-testid="stFileUploader"] > div:hover {
-    border-color: rgba(138,180,248,0.5) !important;
-    background: var(--bg-hover) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 20px rgba(0,245,255,0.1), inset 0 0 20px rgba(0,245,255,0.03) !important;
 }
 [data-testid="stFileUploader"] label {
     color: var(--text-muted) !important;
     font-size: 0.88rem !important;
 }
 
-/* Buttons */
+/* ── BUTTONS ── */
 .stButton > button {
-    background: linear-gradient(135deg, rgba(138,180,248,0.1), rgba(197,138,249,0.1)) !important;
-    color: var(--blue) !important;
-    border: 1px solid rgba(138,180,248,0.3) !important;
-    border-radius: 8px !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.85rem !important;
+    background: transparent !important;
+    color: var(--neon-cyan) !important;
+    border: 1px solid var(--neon-cyan) !important;
+    border-radius: 2px !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 0.7rem !important;
     font-weight: 500 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
     transition: all 0.2s ease !important;
-    letter-spacing: 0.3px !important;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
 }
 .stButton > button:hover {
-    background: linear-gradient(135deg, rgba(138,180,248,0.2), rgba(197,138,249,0.2)) !important;
-    border-color: rgba(138,180,248,0.5) !important;
-    box-shadow: 0 0 20px rgba(138,180,248,0.15) !important;
+    background: rgba(0,245,255,0.08) !important;
+    box-shadow: 0 0 20px rgba(0,245,255,0.3), inset 0 0 20px rgba(0,245,255,0.05) !important;
+    color: #FFFFFF !important;
 }
 
-/* Chat messages */
+/* ── CHAT MESSAGES ── */
 [data-testid="stChatMessage"] {
     background: transparent !important;
-    border-bottom: 1px solid var(--border) !important;
-    padding: 1.2rem 0 !important;
+    border-bottom: 1px solid rgba(0,245,255,0.06) !important;
+    padding: 1rem 0 !important;
 }
-[data-testid="stChatMessage"]:last-child {
-    border-bottom: none !important;
-}
+[data-testid="stChatMessage"]:last-child { border-bottom: none !important; }
 
-/* Chat input */
+/* ── CHAT INPUT ── */
 [data-testid="stChatInput"] {
     background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
-    color: var(--text-white) !important;
-    transition: border-color 0.3s ease !important;
+    border: 1px solid rgba(0,245,255,0.2) !important;
+    border-radius: 2px !important;
+    color: var(--text-main) !important;
+    font-family: 'Rajdhani', sans-serif !important;
 }
 [data-testid="stChatInput"]:focus-within {
-    border-color: rgba(138,180,248,0.4) !important;
-    box-shadow: 0 0 0 3px rgba(138,180,248,0.08) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 30px rgba(0,245,255,0.15) !important;
 }
 [data-testid="stChatInput"] textarea {
-    color: var(--text-white) !important;
+    color: var(--text-main) !important;
     background: transparent !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    font-size: 0.95rem !important;
 }
 
-/* Metrics */
+/* ── METRICS ── */
 [data-testid="stMetric"] {
     background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
+    border: 1px solid rgba(0,245,255,0.15) !important;
+    border-radius: 4px !important;
     padding: 1rem !important;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%) !important;
 }
 [data-testid="stMetricValue"] {
-    background: linear-gradient(135deg, var(--blue), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 600 !important;
+    font-family: 'Orbitron', monospace !important;
+    color: var(--neon-cyan) !important;
+    font-size: 1.5rem !important;
+    text-shadow: 0 0 20px rgba(0,245,255,0.5) !important;
 }
-[data-testid="stMetricLabel"] { color: var(--text-muted) !important; font-size: 0.8rem !important; }
+[data-testid="stMetricLabel"] {
+    font-family: 'Share Tech Mono', monospace !important;
+    color: var(--text-muted) !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+}
 
-/* Alerts */
-.stAlert { border-radius: 10px !important; }
-.stSuccess { background: rgba(120,217,209,0.08) !important; border: 1px solid rgba(120,217,209,0.2) !important; }
-.stError { background: rgba(242,139,130,0.08) !important; border: 1px solid rgba(242,139,130,0.2) !important; }
-.stInfo { background: rgba(138,180,248,0.08) !important; border: 1px solid rgba(138,180,248,0.2) !important; }
+/* ── ALERTS ── */
+.stAlert { border-radius: 2px !important; }
+div[data-testid="stAlert"] {
+    background: rgba(0,245,255,0.04) !important;
+    border: 1px solid rgba(0,245,255,0.2) !important;
+    border-left: 3px solid var(--neon-cyan) !important;
+    border-radius: 0 !important;
+}
 
-/* Spinner */
-.stSpinner > div { border-top-color: var(--blue) !important; }
+/* ── SPINNER ── */
+.stSpinner > div { border-top-color: var(--neon-cyan) !important; }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: rgba(138,180,248,0.2); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(138,180,248,0.4); }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.3); }
+::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
 
-/* Status badge */
-.status-pill {
+/* ── STATUS PILL ── */
+.status-hud {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(120,217,209,0.08);
-    border: 1px solid rgba(120,217,209,0.2);
-    color: var(--teal);
-    font-size: 0.78rem;
-    font-weight: 500;
-    padding: 0.3rem 0.9rem;
-    border-radius: 20px;
+    gap: 8px;
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--neon-green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    padding: 0.35rem 1rem;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
 
-.pulse-dot {
-    width: 6px;
-    height: 6px;
+.hud-dot {
+    width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--teal);
-    animation: pulse 2s ease infinite;
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: hudPulse 1.5s ease infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
+@keyframes hudPulse {
+    0%, 100% { box-shadow: 0 0 4px var(--neon-green); opacity: 1; }
+    50% { box-shadow: 0 0 12px var(--neon-green), 0 0 24px var(--neon-green); opacity: 0.7; }
 }
 
-/* Empty state */
+/* ── SUGGESTION CHIPS ── */
+.chip {
+    display: inline-block;
+    background: rgba(0,245,255,0.04);
+    border: 1px solid rgba(0,245,255,0.15);
+    color: var(--text-muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 0.3rem 0.8rem;
+    margin: 0.2rem;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+    transition: all 0.2s ease;
+}
+.chip:hover {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    background: rgba(0,245,255,0.08);
+}
+
+/* ── EMPTY STATE ── */
 .empty-state {
     text-align: center;
     padding: 4rem 1rem;
 }
-
 .empty-icon {
-    font-size: 2rem;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    color: var(--neon-cyan);
     margin-bottom: 1rem;
     display: block;
+    opacity: 0.3;
+    animation: iconPulse 3s ease infinite;
 }
-
+@keyframes iconPulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+}
 .empty-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 3px;
     color: var(--text-muted);
-    margin-bottom: 0.4rem;
-    font-weight: 500;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
 }
-
 .empty-sub {
-    font-size: 0.83rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
     color: var(--text-dim);
+    letter-spacing: 1px;
 }
 
-/* Suggestion chips */
-.chip {
-    display: inline-block;
-    background: var(--bg-hover);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 0.35rem 0.8rem;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    margin: 0.2rem;
-    cursor: default;
-    transition: border-color 0.2s ease;
-}
-.chip:hover {
-    border-color: rgba(138,180,248,0.3);
-    color: var(--blue);
-}
+/* ── HR ── */
+hr { border-color: rgba(0,245,255,0.1) !important; }
 
-/* HR */
-hr { border-color: var(--border) !important; }
-
-/* Block container */
+/* ── BLOCK CONTAINER ── */
 .block-container {
     padding: 0 2rem !important;
     max-width: 1200px !important;
@@ -392,7 +481,7 @@ hr { border-color: var(--border) !important; }
 
 # ── API Key check ─────────────────────────────────────────────────────────────
 if not os.getenv("GOOGLE_API_KEY"):
-    st.error("GOOGLE_API_KEY is not configured. Please set it in Streamlit secrets.")
+    st.error("[ ERROR ] GOOGLE_API_KEY not configured. Set it in Streamlit secrets.")
     st.stop()
 
 # ── Session state ─────────────────────────────────────────────────────────────
@@ -400,29 +489,29 @@ for key, default in [("qa_chain", None), ("chat_history", []), ("pdf_name", None
     if key not in st.session_state:
         st.session_state[key] = default
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
     <div class="logo-wrap">
         <div class="logo-text">AskMyDoc</div>
-        <div class="logo-sub">Document Intelligence</div>
+        <div class="logo-sub">// Intelligence System v1.0</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<span class="sec-label">How it works</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sec-label">// System Protocol</span>', unsafe_allow_html=True)
 
     steps = [
         "Upload a PDF document",
-        "Text is extracted and chunked",
-        "Chunks are embedded into vectors",
-        "Stored in a FAISS vector database",
-        "Your question matches relevant chunks",
+        "Text extracted and chunked",
+        "Chunks embedded into vectors",
+        "Stored in FAISS database",
+        "Question matched to relevant chunks",
         "Gemini AI generates the answer",
     ]
-    for text in steps:
+    for i, text in enumerate(steps, 1):
         st.markdown(f"""
         <div class="sidebar-step">
-            <div class="step-dot"></div>
+            <div class="step-num">0{i}</div>
             <div class="step-txt">{text}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -430,42 +519,43 @@ with st.sidebar:
     st.markdown("---")
 
     if st.session_state.pdf_name:
+        name = st.session_state.pdf_name[:20] + "..." if len(st.session_state.pdf_name) > 20 else st.session_state.pdf_name
         st.markdown(f"""
-        <div class="status-pill">
-            <div class="pulse-dot"></div>
-            {st.session_state.pdf_name}
+        <div class="status-hud">
+            <div class="hud-dot"></div>
+            {name}
         </div>
         """, unsafe_allow_html=True)
         st.markdown("")
-        if st.button("Clear document"):
+        if st.button("Eject Document"):
             for key in ["qa_chain", "chat_history", "pdf_name", "doc_stats"]:
                 st.session_state[key] = None if key != "chat_history" else []
             st.rerun()
     else:
-        st.markdown('<p style="font-size:0.8rem;color:#5F6368;">No document loaded</p>', unsafe_allow_html=True)
+        st.markdown('<p style="font-family:Share Tech Mono,monospace;font-size:0.72rem;color:#3A4A6A;letter-spacing:1px;">[ NO DOCUMENT LOADED ]</p>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown('<p style="font-size:0.72rem;color:#5F6368;line-height:1.8;">Built with LangChain · FAISS<br>Google Gemini · Streamlit</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-family:Share Tech Mono,monospace;font-size:0.65rem;color:#3A4A6A;line-height:2;letter-spacing:1px;">LANGCHAIN · FAISS<br>GOOGLE GEMINI · STREAMLIT</p>', unsafe_allow_html=True)
 
-# ── Hero header ───────────────────────────────────────────────────────────────
+# ── HERO ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <span class="hero-sparkle">✦ &nbsp; Powered by Gemini AI &nbsp; ✦</span>
+    <span class="hero-badge">[ SYSTEM ONLINE ] &nbsp;·&nbsp; POWERED BY GEMINI AI &nbsp;·&nbsp; [ RAG ENGINE ACTIVE ]</span>
     <h1 class="hero-title">AskMyDoc</h1>
-    <p class="hero-sub">Upload any document. Ask anything. Get intelligent, precise answers.</p>
+    <p class="hero-sub">Load your document. Query the intelligence. Get precise answers.</p>
 </div>
-<div class="glow-divider"></div>
+<div class="neon-divider"></div>
 """, unsafe_allow_html=True)
 
-# ── Two column layout ─────────────────────────────────────────────────────────
+# ── TWO COLUMN LAYOUT ─────────────────────────────────────────────────────────
 col1, col2 = st.columns([1, 1.7], gap="large")
 
-# ── LEFT: Upload ──────────────────────────────────────────────────────────────
+# ── LEFT: UPLOAD ──────────────────────────────────────────────────────────────
 with col1:
-    st.markdown('<span class="sec-label">Document</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sec-label">// Document Upload</span>', unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "Select a PDF",
+        "Select PDF",
         type="pdf",
         label_visibility="collapsed"
     )
@@ -475,7 +565,7 @@ with col1:
             temp_path = f"temp_{uploaded_file.name}"
             with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            with st.spinner("Processing document..."):
+            with st.spinner("Initialising intelligence matrix..."):
                 try:
                     pages = load_pdf(temp_path)
                     chunks = split_into_chunks(pages)
@@ -487,12 +577,12 @@ with col1:
                     st.session_state.doc_stats = {"pages": len(pages), "chunks": len(chunks)}
                     os.remove(temp_path)
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    st.error(f"[ ERROR ] {str(e)}")
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
 
     if st.session_state.doc_stats:
-        st.success(f"Document ready — {st.session_state.doc_stats['pages']} page(s) processed")
+        st.success(f"[ ONLINE ] Document loaded successfully")
         c1, c2 = st.columns(2)
         with c1:
             st.metric("Pages", st.session_state.doc_stats["pages"])
@@ -500,61 +590,63 @@ with col1:
             st.metric("Chunks", st.session_state.doc_stats["chunks"])
 
         st.markdown("---")
-        st.markdown('<span class="sec-label">Try asking</span>', unsafe_allow_html=True)
+        st.markdown('<span class="sec-label">// Suggested Queries</span>', unsafe_allow_html=True)
         suggestions = [
             "Summarise this document",
             "What are the key points?",
-            "What skills are mentioned?",
-            "What is the main conclusion?",
+            "List all skills mentioned",
+            "What is the conclusion?",
         ]
         for s in suggestions:
             st.markdown(f'<span class="chip">{s}</span>', unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div style="margin-top:1rem; padding:1.2rem; background:rgba(138,180,248,0.04); border:1px solid rgba(138,180,248,0.1); border-radius:12px;">
-            <p style="font-size:0.83rem; color:#9AA0A6; margin:0; line-height:1.7;">
-                Upload a PDF to begin. Supports research papers, resumes, contracts, reports, and more.
+        <div style="margin-top:1rem; padding:1.2rem; background:rgba(0,245,255,0.02); border:1px solid rgba(0,245,255,0.1); clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));">
+            <p style="font-family: Share Tech Mono, monospace; font-size:0.78rem; color:#6A7A9A; margin:0; line-height:1.9; letter-spacing:0.5px;">
+                AWAITING INPUT...<br>
+                Upload a PDF to initialise<br>
+                the intelligence system.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
 # ── RIGHT: Q&A ────────────────────────────────────────────────────────────────
 with col2:
-    st.markdown('<span class="sec-label">Conversation</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sec-label">// Query Interface</span>', unsafe_allow_html=True)
 
     if st.session_state.qa_chain is not None:
         if not st.session_state.chat_history:
             st.markdown("""
             <div class="empty-state">
-                <span class="empty-icon">✦</span>
-                <div class="empty-title">Document loaded and ready</div>
-                <div class="empty-sub">Type your first question below</div>
+                <span class="empty-icon">◈</span>
+                <div class="empty-title">System Ready</div>
+                <div class="empty-sub">// Awaiting your query...</div>
             </div>
             """, unsafe_allow_html=True)
         else:
             for chat in st.session_state.chat_history:
                 with st.chat_message("user"):
-                    st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{chat["question"]}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:0.95rem;color:#E0E8FF;">{chat["question"]}</span>', unsafe_allow_html=True)
                 with st.chat_message("assistant"):
-                    st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{chat["answer"]}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:0.95rem;color:#E0E8FF;line-height:1.7;">{chat["answer"]}</span>', unsafe_allow_html=True)
 
-        user_question = st.chat_input("Ask anything about your document...")
+        user_question = st.chat_input("Enter query...")
         if user_question:
             with st.chat_message("user"):
-                st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{user_question}</span>', unsafe_allow_html=True)
+                st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:0.95rem;color:#E0E8FF;">{user_question}</span>', unsafe_allow_html=True)
             with st.chat_message("assistant"):
-                with st.spinner("Searching and generating answer..."):
+                with st.spinner("Scanning intelligence matrix..."):
                     try:
                         answer = ask_question(st.session_state.qa_chain, user_question)
-                        st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{answer}</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="font-family:Rajdhani,sans-serif;font-size:0.95rem;color:#E0E8FF;line-height:1.7;">{answer}</span>', unsafe_allow_html=True)
                         st.session_state.chat_history.append({"question": user_question, "answer": answer})
                     except Exception as e:
-                        st.error(f"Error: {str(e)}")
+                        st.error(f"[ ERROR ] {str(e)}")
     else:
         st.markdown("""
         <div class="empty-state">
-            <span class="empty-icon">✦</span>
-            <div class="empty-title">No document loaded</div>
-            <div class="empty-sub">Upload a PDF on the left to start asking questions</div>
+            <span class="empty-icon">◈</span>
+            <div class="empty-title">Awaiting Document</div>
+            <div class="empty-sub">// Upload a PDF to activate query interface</div>
         </div>
         """, unsafe_allow_html=True)
