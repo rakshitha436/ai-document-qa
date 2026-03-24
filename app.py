@@ -5,377 +5,425 @@ from text_chunker import split_into_chunks
 from embeddings import create_vector_store, save_vector_store
 from qa_pipeline import build_qa_chain, ask_question
 
-# ── Page configuration ────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="AskMyDoc",
-    page_icon="assets/favicon.ico",
+    page_icon="✦",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Display:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Syne:wght@400;500;700&display=swap');
 
-    /* ── Root variables ── */
-    :root {
-        --navy:       #0D1B2A;
-        --navy-mid:   #1B2E42;
-        --navy-light: #243447;
-        --gold:       #C9A84C;
-        --gold-light: #E2C97E;
-        --cream:      #F5F0E8;
-        --cream-dark: #EDE6D6;
-        --text-dark:  #0D1B2A;
-        --text-mid:   #3D5166;
-        --text-light: #8A9BB0;
-        --white:      #FFFFFF;
-        --border:     #D8CEBC;
-    }
+:root {
+    --bg-dark:    #0F0F10;
+    --bg-card:    #1A1A1F;
+    --bg-hover:   #22222A;
+    --border:     rgba(255,255,255,0.08);
+    --border-glow:rgba(138,180,248,0.3);
+    --text-white: #E8EAED;
+    --text-muted: #9AA0A6;
+    --text-dim:   #5F6368;
+    --blue:       #8AB4F8;
+    --purple:     #C58AF9;
+    --teal:       #78D9D1;
+    --pink:       #F28B82;
+    --gold:       #FDD663;
+}
 
-    /* ── Global reset ── */
-    html, body, [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
-        color: var(--text-dark);
-    }
+html, body, [class*="css"] {
+    font-family: 'DM Sans', sans-serif !important;
+    background-color: var(--bg-dark) !important;
+    color: var(--text-white) !important;
+}
 
-    .stApp {
-        background-color: var(--cream);
-    }
+.stApp { background: var(--bg-dark) !important; }
+#MainMenu, footer, header { visibility: hidden; }
+.stDeployButton { display: none; }
 
-    /* ── Hide default Streamlit elements ── */
-    #MainMenu, footer, header { visibility: hidden; }
-    .stDeployButton { display: none; }
+/* Animated gradient background */
+.stApp::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+        radial-gradient(ellipse at 20% 20%, rgba(138,180,248,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(197,138,249,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(120,217,209,0.02) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
 
-    /* ── Sidebar ── */
-    section[data-testid="stSidebar"] {
-        background-color: var(--navy) !important;
-        border-right: 1px solid var(--navy-light);
-    }
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: #0D0D0F !important;
+    border-right: 1px solid var(--border) !important;
+}
+section[data-testid="stSidebar"] * { color: var(--text-white) !important; }
+section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-size: 0.85rem !important; }
 
-    section[data-testid="stSidebar"] * {
-        color: var(--cream) !important;
-    }
+.logo-wrap {
+    padding: 2rem 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
 
-    section[data-testid="stSidebar"] .stMarkdown p {
-        color: #A8B8C8 !important;
-        font-size: 0.85rem;
-        line-height: 1.7;
-    }
+.logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 50%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    margin: 0;
+    animation: shimmer 4s ease-in-out infinite;
+    background-size: 200% 200%;
+}
 
-    /* ── Sidebar logo area ── */
-    .sidebar-logo {
-        padding: 2rem 1rem 1.5rem;
-        border-bottom: 1px solid var(--navy-light);
-        margin-bottom: 1.5rem;
-    }
+@keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
 
-    .sidebar-logo h1 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: var(--white) !important;
-        letter-spacing: -0.5px;
-        margin: 0;
-    }
+.logo-sub {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim) !important;
+    margin-top: 0.2rem;
+}
 
-    .sidebar-logo span {
-        color: var(--gold) !important;
-    }
+.sidebar-step {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.55rem 0;
+}
 
-    .sidebar-tagline {
-        font-size: 0.75rem;
-        color: var(--text-light) !important;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin-top: 0.3rem;
-    }
+.step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    flex-shrink: 0;
+    margin-top: 6px;
+}
 
-    /* ── Sidebar steps ── */
-    .sidebar-step {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        padding: 0.6rem 0;
-    }
+.step-txt {
+    font-size: 0.82rem;
+    color: var(--text-muted) !important;
+    line-height: 1.5;
+}
 
-    .step-number {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: var(--navy-light);
-        border: 1px solid var(--gold);
-        color: var(--gold) !important;
-        font-size: 0.7rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        margin-top: 1px;
-    }
+/* Main header */
+.hero {
+    padding: 3.5rem 0 2.5rem;
+    text-align: center;
+    position: relative;
+}
 
-    .step-text {
-        font-size: 0.83rem;
-        color: #A8B8C8 !important;
-        line-height: 1.5;
-    }
+.hero-sparkle {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    display: block;
+}
 
-    /* ── Main content area ── */
-    .main-header {
-        padding: 3rem 0 2rem;
-        border-bottom: 1px solid var(--border);
-        margin-bottom: 2.5rem;
-    }
+.hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 3.2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 0.8rem;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--blue) 40%, var(--purple) 70%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 300% 300%;
+    animation: titleFlow 6s ease infinite;
+}
 
-    .main-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.8rem;
-        font-weight: 700;
-        color: var(--navy);
-        letter-spacing: -1px;
-        line-height: 1.1;
-        margin: 0;
-    }
+@keyframes titleFlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
 
-    .main-title span {
-        color: var(--gold);
-    }
+.hero-sub {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.3px;
+    margin: 0;
+}
 
-    .main-subtitle {
-        font-size: 1rem;
-        color: var(--text-mid);
-        margin-top: 0.6rem;
-        font-weight: 300;
-        letter-spacing: 0.2px;
-    }
+/* Glowing divider */
+.glow-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), var(--purple), var(--teal), transparent);
+    margin: 0.5rem 0 2.5rem;
+    opacity: 0.4;
+}
 
-    /* ── Section headings ── */
-    .section-label {
-        font-size: 0.7rem;
-        font-weight: 500;
-        letter-spacing: 2.5px;
-        text-transform: uppercase;
-        color: var(--gold);
-        margin-bottom: 0.8rem;
-    }
+/* Cards */
+.glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+}
 
-    /* ── Upload area ── */
-    .upload-container {
-        background: var(--white);
-        border: 1.5px solid var(--border);
-        border-radius: 8px;
-        padding: 2rem;
-        margin-bottom: 1.5rem;
-        transition: border-color 0.2s ease;
-    }
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(138,180,248,0.4), rgba(197,138,249,0.4), transparent);
+}
 
-    .upload-container:hover {
-        border-color: var(--gold);
-    }
+.glass-card:hover {
+    border-color: rgba(138,180,248,0.2);
+}
 
-    /* ── File uploader styling ── */
-    [data-testid="stFileUploader"] {
-        background: transparent;
-    }
+/* Section label */
+.sec-label {
+    font-size: 0.68rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    display: block;
+    font-weight: 500;
+}
 
-    [data-testid="stFileUploader"] > div {
-        border: 1.5px dashed var(--border) !important;
-        background: var(--cream) !important;
-        border-radius: 6px !important;
-        padding: 1.5rem !important;
-        transition: all 0.2s ease;
-    }
+/* File uploader */
+[data-testid="stFileUploader"] > div {
+    background: var(--bg-card) !important;
+    border: 1px dashed rgba(138,180,248,0.25) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+}
+[data-testid="stFileUploader"] > div:hover {
+    border-color: rgba(138,180,248,0.5) !important;
+    background: var(--bg-hover) !important;
+}
+[data-testid="stFileUploader"] label {
+    color: var(--text-muted) !important;
+    font-size: 0.88rem !important;
+}
 
-    [data-testid="stFileUploader"] > div:hover {
-        border-color: var(--gold) !important;
-        background: var(--cream-dark) !important;
-    }
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(135deg, rgba(138,180,248,0.1), rgba(197,138,249,0.1)) !important;
+    color: var(--blue) !important;
+    border: 1px solid rgba(138,180,248,0.3) !important;
+    border-radius: 8px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.3px !important;
+}
+.stButton > button:hover {
+    background: linear-gradient(135deg, rgba(138,180,248,0.2), rgba(197,138,249,0.2)) !important;
+    border-color: rgba(138,180,248,0.5) !important;
+    box-shadow: 0 0 20px rgba(138,180,248,0.15) !important;
+}
 
-    [data-testid="stFileUploader"] label {
-        color: var(--text-mid) !important;
-        font-size: 0.9rem;
-    }
+/* Chat messages */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 1.2rem 0 !important;
+}
+[data-testid="stChatMessage"]:last-child {
+    border-bottom: none !important;
+}
 
-    /* ── Success / info / error boxes ── */
-    .stAlert {
-        border-radius: 6px !important;
-        font-size: 0.88rem;
-    }
+/* Chat input */
+[data-testid="stChatInput"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    color: var(--text-white) !important;
+    transition: border-color 0.3s ease !important;
+}
+[data-testid="stChatInput"]:focus-within {
+    border-color: rgba(138,180,248,0.4) !important;
+    box-shadow: 0 0 0 3px rgba(138,180,248,0.08) !important;
+}
+[data-testid="stChatInput"] textarea {
+    color: var(--text-white) !important;
+    background: transparent !important;
+}
 
-    /* ── Chat messages ── */
-    [data-testid="stChatMessage"] {
-        background: transparent !important;
-        border-bottom: 1px solid var(--border);
-        padding: 1.2rem 0 !important;
-    }
+/* Metrics */
+[data-testid="stMetric"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+}
+[data-testid="stMetricValue"] {
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 600 !important;
+}
+[data-testid="stMetricLabel"] { color: var(--text-muted) !important; font-size: 0.8rem !important; }
 
-    [data-testid="stChatMessage"]:last-child {
-        border-bottom: none;
-    }
+/* Alerts */
+.stAlert { border-radius: 10px !important; }
+.stSuccess { background: rgba(120,217,209,0.08) !important; border: 1px solid rgba(120,217,209,0.2) !important; }
+.stError { background: rgba(242,139,130,0.08) !important; border: 1px solid rgba(242,139,130,0.2) !important; }
+.stInfo { background: rgba(138,180,248,0.08) !important; border: 1px solid rgba(138,180,248,0.2) !important; }
 
-    /* User message bubble */
-    [data-testid="stChatMessage"][data-testid*="user"] {
-        background: var(--white) !important;
-        border-radius: 6px;
-        padding: 1rem 1.2rem !important;
-        border: 1px solid var(--border) !important;
-        margin-bottom: 0.5rem;
-    }
+/* Spinner */
+.stSpinner > div { border-top-color: var(--blue) !important; }
 
-    /* ── Chat input ── */
-    [data-testid="stChatInput"] {
-        background: var(--white) !important;
-        border: 1.5px solid var(--border) !important;
-        border-radius: 6px !important;
-        font-family: 'DM Sans', sans-serif !important;
-    }
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: rgba(138,180,248,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(138,180,248,0.4); }
 
-    [data-testid="stChatInput"]:focus-within {
-        border-color: var(--navy) !important;
-        box-shadow: 0 0 0 3px rgba(13, 27, 42, 0.08) !important;
-    }
+/* Status badge */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(120,217,209,0.08);
+    border: 1px solid rgba(120,217,209,0.2);
+    color: var(--teal);
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+}
 
-    /* ── Spinner ── */
-    .stSpinner > div {
-        border-top-color: var(--gold) !important;
-    }
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: pulse 2s ease infinite;
+}
 
-    /* ── Buttons ── */
-    .stButton > button {
-        background: var(--navy) !important;
-        color: var(--cream) !important;
-        border: none !important;
-        border-radius: 5px !important;
-        font-family: 'DM Sans', sans-serif !important;
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.5px !important;
-        padding: 0.5rem 1.2rem !important;
-        transition: background 0.2s ease !important;
-    }
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
 
-    .stButton > button:hover {
-        background: var(--navy-mid) !important;
-    }
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+}
 
-    /* ── Divider ── */
-    hr {
-        border-color: var(--border) !important;
-        margin: 1.5rem 0 !important;
-    }
+.empty-icon {
+    font-size: 2rem;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    display: block;
+}
 
-    /* ── Status badge ── */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba(201, 168, 76, 0.12);
-        border: 1px solid rgba(201, 168, 76, 0.3);
-        color: #8B6914;
-        font-size: 0.78rem;
-        font-weight: 500;
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        letter-spacing: 0.3px;
-    }
+.empty-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
 
-    .status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--gold);
-    }
+.empty-sub {
+    font-size: 0.83rem;
+    color: var(--text-dim);
+}
 
-    /* ── Expander ── */
-    .streamlit-expanderHeader {
-        font-size: 0.82rem !important;
-        color: var(--text-mid) !important;
-        font-family: 'DM Sans', sans-serif !important;
-    }
+/* Suggestion chips */
+.chip {
+    display: inline-block;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.2rem;
+    cursor: default;
+    transition: border-color 0.2s ease;
+}
+.chip:hover {
+    border-color: rgba(138,180,248,0.3);
+    color: var(--blue);
+}
 
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: var(--cream); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+/* HR */
+hr { border-color: var(--border) !important; }
 
-    /* ── Q&A container ── */
-    .qa-container {
-        background: var(--white);
-        border: 1.5px solid var(--border);
-        border-radius: 8px;
-        padding: 1.5rem 2rem;
-        min-height: 300px;
-    }
-
-    /* ── Empty state ── */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-light);
-    }
-
-    .empty-state-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.1rem;
-        color: var(--text-mid);
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-state-sub {
-        font-size: 0.85rem;
-        color: var(--text-light);
-    }
-
-    /* ── Column layout ── */
-    .block-container {
-        padding: 0 2rem !important;
-        max-width: 1200px !important;
-    }
+/* Block container */
+.block-container {
+    padding: 0 2rem !important;
+    max-width: 1200px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ── Check for Google API key ──────────────────────────────────────────────────
+# ── API Key check ─────────────────────────────────────────────────────────────
 if not os.getenv("GOOGLE_API_KEY"):
     st.error("GOOGLE_API_KEY is not configured. Please set it in Streamlit secrets.")
     st.stop()
 
 # ── Session state ─────────────────────────────────────────────────────────────
-if "qa_chain" not in st.session_state:
-    st.session_state.qa_chain = None
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "pdf_name" not in st.session_state:
-    st.session_state.pdf_name = None
-if "doc_stats" not in st.session_state:
-    st.session_state.doc_stats = None
+for key, default in [("qa_chain", None), ("chat_history", []), ("pdf_name", None), ("doc_stats", None)]:
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div class="sidebar-logo">
-        <h1>Ask<span>My</span>Doc</h1>
-        <div class="sidebar-tagline">Document Intelligence</div>
+    <div class="logo-wrap">
+        <div class="logo-text">AskMyDoc</div>
+        <div class="logo-sub">Document Intelligence</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("**How it works**")
-    steps = [
-        ("1", "Upload a PDF document"),
-        ("2", "Text is extracted and split into chunks"),
-        ("3", "Each chunk is converted to an embedding vector"),
-        ("4", "Vectors are stored in a FAISS database"),
-        ("5", "Your question is matched to relevant chunks"),
-        ("6", "Gemini AI generates a contextual answer"),
-    ]
+    st.markdown('<span class="sec-label">How it works</span>', unsafe_allow_html=True)
 
-    for num, text in steps:
+    steps = [
+        "Upload a PDF document",
+        "Text is extracted and chunked",
+        "Chunks are embedded into vectors",
+        "Stored in a FAISS vector database",
+        "Your question matches relevant chunks",
+        "Gemini AI generates the answer",
+    ]
+    for text in steps:
         st.markdown(f"""
         <div class="sidebar-step">
-            <div class="step-number">{num}</div>
-            <div class="step-text">{text}</div>
+            <div class="step-dot"></div>
+            <div class="step-txt">{text}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -383,142 +431,130 @@ with st.sidebar:
 
     if st.session_state.pdf_name:
         st.markdown(f"""
-        <div class="status-badge">
-            <div class="status-dot"></div>
+        <div class="status-pill">
+            <div class="pulse-dot"></div>
             {st.session_state.pdf_name}
         </div>
         """, unsafe_allow_html=True)
         st.markdown("")
-        if st.button("Clear Document"):
-            st.session_state.qa_chain = None
-            st.session_state.chat_history = []
-            st.session_state.pdf_name = None
-            st.session_state.doc_stats = None
+        if st.button("Clear document"):
+            for key in ["qa_chain", "chat_history", "pdf_name", "doc_stats"]:
+                st.session_state[key] = None if key != "chat_history" else []
             st.rerun()
     else:
-        st.markdown('<p style="font-size:0.82rem; color:#6B8099;">No document loaded</p>', unsafe_allow_html=True)
+        st.markdown('<p style="font-size:0.8rem;color:#5F6368;">No document loaded</p>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown('<p style="font-size:0.75rem; color:#4A6278;">Built with LangChain, FAISS<br>and Google Gemini</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.72rem;color:#5F6368;line-height:1.8;">Built with LangChain · FAISS<br>Google Gemini · Streamlit</p>', unsafe_allow_html=True)
 
-# ── Main content ──────────────────────────────────────────────────────────────
+# ── Hero header ───────────────────────────────────────────────────────────────
 st.markdown("""
-<div class="main-header">
-    <h1 class="main-title">Ask<span>My</span>Doc</h1>
-    <p class="main-subtitle">Upload a document. Ask anything. Get precise, source-backed answers.</p>
+<div class="hero">
+    <span class="hero-sparkle">✦ &nbsp; Powered by Gemini AI &nbsp; ✦</span>
+    <h1 class="hero-title">AskMyDoc</h1>
+    <p class="hero-sub">Upload any document. Ask anything. Get intelligent, precise answers.</p>
 </div>
+<div class="glow-divider"></div>
 """, unsafe_allow_html=True)
 
-# ── Two-column layout ─────────────────────────────────────────────────────────
-col1, col2 = st.columns([1, 1.6], gap="large")
+# ── Two column layout ─────────────────────────────────────────────────────────
+col1, col2 = st.columns([1, 1.7], gap="large")
 
-# ── LEFT COLUMN: Upload ───────────────────────────────────────────────────────
+# ── LEFT: Upload ──────────────────────────────────────────────────────────────
 with col1:
-    st.markdown('<div class="section-label">Document</div>', unsafe_allow_html=True)
+    st.markdown('<span class="sec-label">Document</span>', unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "Select a PDF file to analyse",
+        "Select a PDF",
         type="pdf",
         label_visibility="collapsed"
     )
 
     if uploaded_file is not None:
         if st.session_state.pdf_name != uploaded_file.name:
-            temp_pdf_path = f"temp_{uploaded_file.name}"
-            with open(temp_pdf_path, "wb") as f:
+            temp_path = f"temp_{uploaded_file.name}"
+            with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
-
             with st.spinner("Processing document..."):
                 try:
-                    pages = load_pdf(temp_pdf_path)
+                    pages = load_pdf(temp_path)
                     chunks = split_into_chunks(pages)
                     vector_store = create_vector_store(chunks)
                     save_vector_store(vector_store)
                     st.session_state.qa_chain = build_qa_chain(vector_store)
                     st.session_state.pdf_name = uploaded_file.name
                     st.session_state.chat_history = []
-                    st.session_state.doc_stats = {
-                        "pages": len(pages),
-                        "chunks": len(chunks)
-                    }
-                    os.remove(temp_pdf_path)
+                    st.session_state.doc_stats = {"pages": len(pages), "chunks": len(chunks)}
+                    os.remove(temp_path)
                 except Exception as e:
-                    st.error(f"Error processing document: {str(e)}")
-                    if os.path.exists(temp_pdf_path):
-                        os.remove(temp_pdf_path)
+                    st.error(f"Error: {str(e)}")
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
 
-    # Show document stats if loaded
     if st.session_state.doc_stats:
-        st.markdown("---")
-        stat_col1, stat_col2 = st.columns(2)
-        with stat_col1:
+        st.success(f"Document ready — {st.session_state.doc_stats['pages']} page(s) processed")
+        c1, c2 = st.columns(2)
+        with c1:
             st.metric("Pages", st.session_state.doc_stats["pages"])
-        with stat_col2:
+        with c2:
             st.metric("Chunks", st.session_state.doc_stats["chunks"])
 
         st.markdown("---")
-        st.markdown('<div class="section-label">Suggested Questions</div>', unsafe_allow_html=True)
+        st.markdown('<span class="sec-label">Try asking</span>', unsafe_allow_html=True)
         suggestions = [
-            "What is the main topic of this document?",
-            "Summarise the key points.",
-            "What are the most important details?",
+            "Summarise this document",
+            "What are the key points?",
+            "What skills are mentioned?",
+            "What is the main conclusion?",
         ]
         for s in suggestions:
-            st.markdown(f'<p style="font-size:0.82rem; color:#3D5166; padding: 0.3rem 0; border-bottom: 1px solid #EDE6D6;">— {s}</p>', unsafe_allow_html=True)
-
+            st.markdown(f'<span class="chip">{s}</span>', unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div style="margin-top:1.5rem; padding: 1.2rem; background: #EDE6D6; border-radius: 6px;">
-            <p style="font-size:0.83rem; color:#3D5166; margin:0; line-height:1.6;">
-                Upload a PDF to begin. Supported documents include reports, research papers, contracts, resumes, and more.
+        <div style="margin-top:1rem; padding:1.2rem; background:rgba(138,180,248,0.04); border:1px solid rgba(138,180,248,0.1); border-radius:12px;">
+            <p style="font-size:0.83rem; color:#9AA0A6; margin:0; line-height:1.7;">
+                Upload a PDF to begin. Supports research papers, resumes, contracts, reports, and more.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
-# ── RIGHT COLUMN: Q&A ─────────────────────────────────────────────────────────
+# ── RIGHT: Q&A ────────────────────────────────────────────────────────────────
 with col2:
-    st.markdown('<div class="section-label">Conversation</div>', unsafe_allow_html=True)
+    st.markdown('<span class="sec-label">Conversation</span>', unsafe_allow_html=True)
 
     if st.session_state.qa_chain is not None:
-        # Chat history display
-        chat_container = st.container()
-        with chat_container:
-            if not st.session_state.chat_history:
-                st.markdown("""
-                <div class="empty-state">
-                    <div class="empty-state-title">Document ready</div>
-                    <div class="empty-state-sub">Type your question below to begin</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                for chat in st.session_state.chat_history:
-                    with st.chat_message("user"):
-                        st.markdown(f'<span style="font-size:0.92rem;">{chat["question"]}</span>', unsafe_allow_html=True)
-                    with st.chat_message("assistant"):
-                        st.markdown(f'<span style="font-size:0.92rem;">{chat["answer"]}</span>', unsafe_allow_html=True)
+        if not st.session_state.chat_history:
+            st.markdown("""
+            <div class="empty-state">
+                <span class="empty-icon">✦</span>
+                <div class="empty-title">Document loaded and ready</div>
+                <div class="empty-sub">Type your first question below</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            for chat in st.session_state.chat_history:
+                with st.chat_message("user"):
+                    st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{chat["question"]}</span>', unsafe_allow_html=True)
+                with st.chat_message("assistant"):
+                    st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{chat["answer"]}</span>', unsafe_allow_html=True)
 
-        # Chat input
-        user_question = st.chat_input("Ask a question about your document...")
-
+        user_question = st.chat_input("Ask anything about your document...")
         if user_question:
             with st.chat_message("user"):
-                st.markdown(f'<span style="font-size:0.92rem;">{user_question}</span>', unsafe_allow_html=True)
-
+                st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{user_question}</span>', unsafe_allow_html=True)
             with st.chat_message("assistant"):
-                with st.spinner("Searching document..."):
+                with st.spinner("Searching and generating answer..."):
                     try:
                         answer = ask_question(st.session_state.qa_chain, user_question)
-                        st.markdown(f'<span style="font-size:0.92rem;">{answer}</span>', unsafe_allow_html=True)
-                        st.session_state.chat_history.append({
-                            "question": user_question,
-                            "answer": answer
-                        })
+                        st.markdown(f'<span style="font-size:0.92rem;color:#E8EAED;">{answer}</span>', unsafe_allow_html=True)
+                        st.session_state.chat_history.append({"question": user_question, "answer": answer})
                     except Exception as e:
-                        st.error(f"Error generating answer: {str(e)}")
+                        st.error(f"Error: {str(e)}")
     else:
         st.markdown("""
-        <div class="empty-state" style="padding: 5rem 1rem;">
-            <div class="empty-state-title">No document loaded</div>
-            <div class="empty-state-sub">Upload a PDF on the left to start asking questions</div>
+        <div class="empty-state">
+            <span class="empty-icon">✦</span>
+            <div class="empty-title">No document loaded</div>
+            <div class="empty-sub">Upload a PDF on the left to start asking questions</div>
         </div>
         """, unsafe_allow_html=True)
