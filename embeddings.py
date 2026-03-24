@@ -1,16 +1,11 @@
-# ============================================================
-# embeddings.py - Updated to use Google Gemini
-# ============================================================
-
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
+from langchain_core.documents import Document
 from typing import List
 import os
 
 def create_vector_store(chunks: List[Document]):
     print("\n🔢 Generating embeddings and building FAISS vector store...")
-    print("   (This may take a moment depending on document size...)")
 
     embedding_model = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
