@@ -1,0 +1,7 @@
+venv/
+faiss_index/
+.env
+__pycache__/
+*.pyc
+temp_*.pdf
+Rakshitha_C_Resume.pdf
