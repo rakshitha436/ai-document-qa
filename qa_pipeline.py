@@ -5,6 +5,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.vectorstores import FAISS
 import os
 
+
 def build_qa_chain(vector_store: FAISS):
     print("\n🤖 Building the QA pipeline...")
 
