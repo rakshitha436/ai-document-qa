@@ -41,7 +41,6 @@ html, body, [class*="css"] {
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none; }
 
-/* ── Animated scanlines overlay ── */
 .stApp::after {
     content: '';
     position: fixed;
@@ -57,7 +56,6 @@ html, body, [class*="css"] {
     z-index: 9999;
 }
 
-/* ── Ambient background glow ── */
 .stApp::before {
     content: '';
     position: fixed;
@@ -114,7 +112,6 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     background-size: 200% auto;
     animation: textScan 4s linear infinite;
     margin: 0;
-    text-shadow: none;
 }
 
 @keyframes textScan {
@@ -154,6 +151,86 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     color: var(--text-muted) !important;
     line-height: 1.5;
     font-weight: 400;
+}
+
+/* ── API KEY SCREEN ── */
+.key-screen {
+    max-width: 480px;
+    margin: 6rem auto;
+    text-align: center;
+}
+
+.key-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--neon-cyan) 40%, var(--neon-purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.5rem;
+}
+
+.key-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+}
+
+.key-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 4px;
+    padding: 2rem;
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+}
+
+.key-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+}
+
+.key-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--neon-cyan), transparent);
+}
+
+.key-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.key-hint {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-top: 0.8rem;
+    text-align: left;
+}
+
+.key-hint a {
+    color: var(--neon-cyan) !important;
+    text-decoration: none;
 }
 
 /* ── HERO SECTION ── */
@@ -214,7 +291,6 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     margin: 0.5rem 0 0;
 }
 
-/* ── NEON DIVIDER ── */
 .neon-divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), var(--neon-pink), transparent);
@@ -245,7 +321,6 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     50% { box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan), 0 0 60px var(--neon-purple); }
 }
 
-/* ── SECTION LABEL ── */
 .sec-label {
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.65rem;
@@ -255,33 +330,6 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     margin-bottom: 1rem;
     display: block;
     opacity: 0.8;
-}
-
-/* ── HUD CARD ── */
-.hud-card {
-    background: var(--bg-card);
-    border: 1px solid rgba(0,245,255,0.15);
-    border-radius: 4px;
-    padding: 1.5rem;
-    position: relative;
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
-}
-
-.hud-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, var(--neon-cyan), transparent);
-}
-
-.hud-card::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 1px;
-    height: 100%;
-    background: linear-gradient(180deg, var(--neon-cyan), transparent);
 }
 
 /* ── FILE UPLOADER ── */
@@ -300,6 +348,25 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     font-size: 0.88rem !important;
 }
 
+/* ── TEXT INPUT ── */
+[data-testid="stTextInput"] input {
+    background: rgba(0,245,255,0.03) !important;
+    border: 1px solid rgba(0,245,255,0.25) !important;
+    border-radius: 2px !important;
+    color: var(--text-main) !important;
+    font-family: 'Share Tech Mono', monospace !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 1px !important;
+    transition: all 0.3s ease !important;
+}
+[data-testid="stTextInput"] input:focus {
+    border-color: var(--neon-cyan) !important;
+    box-shadow: 0 0 20px rgba(0,245,255,0.15) !important;
+}
+[data-testid="stTextInput"] input::placeholder {
+    color: var(--text-dim) !important;
+}
+
 /* ── BUTTONS ── */
 .stButton > button {
     background: transparent !important;
@@ -313,6 +380,8 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
     text-transform: uppercase !important;
     transition: all 0.2s ease !important;
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+    width: 100% !important;
+    padding: 0.6rem !important;
 }
 .stButton > button:hover {
     background: rgba(0,245,255,0.08) !important;
@@ -370,7 +439,6 @@ section[data-testid="stSidebar"] p { color: var(--text-muted) !important; font-s
 }
 
 /* ── ALERTS ── */
-.stAlert { border-radius: 2px !important; }
 div[data-testid="stAlert"] {
     background: rgba(0,245,255,0.04) !important;
     border: 1px solid rgba(0,245,255,0.2) !important;
@@ -427,12 +495,6 @@ div[data-testid="stAlert"] {
     padding: 0.3rem 0.8rem;
     margin: 0.2rem;
     clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-    transition: all 0.2s ease;
-}
-.chip:hover {
-    border-color: var(--neon-cyan);
-    color: var(--neon-cyan);
-    background: rgba(0,245,255,0.08);
 }
 
 /* ── EMPTY STATE ── */
@@ -468,10 +530,8 @@ div[data-testid="stAlert"] {
     letter-spacing: 1px;
 }
 
-/* ── HR ── */
 hr { border-color: rgba(0,245,255,0.1) !important; }
 
-/* ── BLOCK CONTAINER ── */
 .block-container {
     padding: 0 2rem !important;
     max-width: 1200px !important;
@@ -479,15 +539,80 @@ hr { border-color: rgba(0,245,255,0.1) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── API Key check ─────────────────────────────────────────────────────────────
-if not os.getenv("GOOGLE_API_KEY"):
-    st.error("[ ERROR ] GOOGLE_API_KEY not configured. Set it in Streamlit secrets.")
-    st.stop()
-
 # ── Session state ─────────────────────────────────────────────────────────────
-for key, default in [("qa_chain", None), ("chat_history", []), ("pdf_name", None), ("doc_stats", None)]:
+for key, default in [
+    ("qa_chain", None),
+    ("chat_history", []),
+    ("pdf_name", None),
+    ("doc_stats", None),
+    ("api_key", None),
+    ("api_key_verified", False)
+]:
     if key not in st.session_state:
         st.session_state[key] = default
+
+# ── Check for API key (environment or session) ────────────────────────────────
+env_key = os.getenv("GOOGLE_API_KEY")
+if env_key:
+    st.session_state.api_key = env_key
+    st.session_state.api_key_verified = True
+
+# ── API KEY INPUT SCREEN ──────────────────────────────────────────────────────
+if not st.session_state.api_key_verified:
+
+    # Hide sidebar on key screen
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] { display: none !important; }
+        .block-container { max-width: 600px !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="key-screen">
+        <div class="key-title">AskMyDoc</div>
+        <div class="key-sub">// Intelligence System — Enter Access Key</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_l, col_c, col_r = st.columns([1, 2, 1])
+    with col_c:
+        st.markdown("""
+        <div class="key-card">
+            <span class="key-label">// Gemini API Key</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        api_input = st.text_input(
+            "API Key",
+            placeholder="AIza...",
+            type="password",
+            label_visibility="collapsed"
+        )
+
+        st.markdown("""
+        <div class="key-hint">
+            Get your free key at
+            <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>
+            <br>Your key is never stored or shared.
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("Initialise System"):
+            if api_input and api_input.startswith("AIza"):
+                st.session_state.api_key = api_input
+                st.session_state.api_key_verified = True
+                os.environ["GOOGLE_API_KEY"] = api_input
+                st.rerun()
+            else:
+                st.error("[ ERROR ] Invalid API key. Must start with 'AIza...'")
+
+    st.stop()
+
+# ── Set API key in environment ────────────────────────────────────────────────
+os.environ["GOOGLE_API_KEY"] = st.session_state.api_key
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -535,12 +660,23 @@ with st.sidebar:
         st.markdown('<p style="font-family:Share Tech Mono,monospace;font-size:0.72rem;color:#3A4A6A;letter-spacing:1px;">[ NO DOCUMENT LOADED ]</p>', unsafe_allow_html=True)
 
     st.markdown("---")
+
+    # Option to change API key
+    if st.button("Change API Key"):
+        st.session_state.api_key = None
+        st.session_state.api_key_verified = False
+        st.session_state.qa_chain = None
+        st.session_state.chat_history = []
+        st.session_state.pdf_name = None
+        st.session_state.doc_stats = None
+        st.rerun()
+
     st.markdown('<p style="font-family:Share Tech Mono,monospace;font-size:0.65rem;color:#3A4A6A;line-height:2;letter-spacing:1px;">LANGCHAIN · FAISS<br>GOOGLE GEMINI · STREAMLIT</p>', unsafe_allow_html=True)
 
 # ── HERO ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <span class="hero-badge">[ SYSTEM ONLINE ] &nbsp;·&nbsp; POWERED BY GEMINI AI &nbsp;·&nbsp; [ RAG ENGINE ACTIVE ]</span>
+    <span class="hero-badge">[ SYSTEM ONLINE ] · POWERED BY GEMINI AI · [ RAG ENGINE ACTIVE ]</span>
     <h1 class="hero-title">AskMyDoc</h1>
     <p class="hero-sub">Load your document. Query the intelligence. Get precise answers.</p>
 </div>
